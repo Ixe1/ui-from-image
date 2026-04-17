@@ -16,6 +16,7 @@ The screenshot is treated as the source of truth. The skill is designed for case
 
 - [SKILL.md](./SKILL.md): the main skill instructions and definition of done
 - [AGENTS.md.template](./AGENTS.md.template): repo-specific setup template for projects that use this skill
+- [examples/README.md](./examples/README.md): guidance for the repository's example input/output images
 - [agents/openai.yaml](./agents/openai.yaml): agent registration metadata
 - [references/visual-qa.md](./references/visual-qa.md): screenshot-based QA checklist
 - [references/asset-prompts.md](./references/asset-prompts.md): rules for placeholder handling and asset-generation prompts
@@ -43,6 +44,15 @@ Examples:
 - `$ui-from-image Are there any other assets we should make for this website?`
 - `$ui-from-image Audit this implemented page against the mockup and tell me which additional images, logos, icons, or social assets would improve it`
 - `$ui-from-image Based on this screenshot implementation, list the missing or optional assets we should create next, with filenames and dimensions`
+
+## Example Assets
+
+The repo can also hold a simple before-and-after example pair under [`examples/`](./examples/):
+
+- `concept-source.png`: the original concept image used as the source of truth
+- `implementation-full-page.png`: the final full-height webpage screenshot created from that concept
+
+This gives readers one concrete input example and one concrete output example for the skill.
 
 ## Verification Standard
 

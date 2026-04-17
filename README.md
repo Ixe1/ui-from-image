@@ -31,6 +31,19 @@ The screenshot is treated as the source of truth. The skill is designed for case
 6. Verify responsive behavior only after the reference-size implementation is visually close.
 7. Do not stop until remaining differences are minor and explainable.
 
+## Example Prompts
+
+This skill is useful both for the initial implementation pass and for follow-up asset planning after the page exists.
+
+Examples:
+
+- `$ui-from-image Implement the attached image to be an actual homepage for the website`
+- `$ui-from-image Recreate this screenshot as a responsive landing page in the current project`
+- `$ui-from-image Use the attached desktop mockup as the source of truth and build the real webpage from it`
+- `$ui-from-image Are there any other assets we should make for this website?`
+- `$ui-from-image Audit this implemented page against the mockup and tell me which additional images, logos, icons, or social assets would improve it`
+- `$ui-from-image Based on this screenshot implementation, list the missing or optional assets we should create next, with filenames and dimensions`
+
 ## Verification Standard
 
 The skill expects explicit checks for:

@@ -11,6 +11,8 @@ Accuracy beats speed. Do not stop at "close enough". The task is not finished wh
 
 Bias toward more verification passes rather than fewer. If there is a realistic chance that text is wrong, a control is crowded, spacing is fragile, or a layout bug is hidden by one viewport, keep iterating.
 
+Do not describe the result as "good enough", "ready to ship", or equivalent unless all mandatory verification and reporting steps in this skill are complete and no known visible mismatch remains beyond clearly stated minor uncertainty.
+
 ## Default output
 
 Unless the repo already dictates another structure, use:
@@ -74,6 +76,10 @@ When working inside an existing frontend or design system:
 ## Viewport honesty and scaling safety
 
 - Treat browser zoom, OS DPI scaling, and device pixel ratio as environmental factors that the implementation must tolerate, not as excuses to distort the layout.
+- When Playwright or similar browser automation is available, treat automation-controlled screenshots captured at an explicit viewport size as the primary fidelity reference for comparison.
+- Do not treat a headed browser window as the source of truth for pixel fidelity when OS DPI scaling, browser zoom, window chrome, or desktop compositor behavior may affect what the human sees on screen.
+- On Windows in particular, assume non-default desktop scaling or browser zoom can make a headed browser visually misleading even when the underlying page layout is correct in CSS pixels.
+- If Playwright reports that it opened a `chrome` or `msedge` browser/channel, that is still Playwright-driven verification. Do not describe this as "switching away from Playwright" unless browser automation was actually abandoned.
 - Do not use CSS `zoom`, root-level `transform: scale(...)`, synthetic wrapper scaling, or similar viewport hacks to make the implementation screenshot look closer to the reference.
 - Do not "fix" width, crowding, or fold-position mismatches by shrinking the entire page or inflating the canvas.
 - Solve screenshot mismatches with real layout changes:
@@ -84,6 +90,7 @@ When working inside an existing frontend or design system:
   - correct control heights and intrinsic widths
   - correct responsive breakpoints
 - If a browser-specific mismatch appears, first suspect invalid layout assumptions, overflow, or scaling hacks in the implementation before blaming the user's environment.
+- If there is a mismatch between a headed browser window and a Playwright screenshot taken at the calibrated viewport, trust the screenshot first for fidelity work and investigate the implementation with additional screenshot passes before attributing the difference to the user's machine.
 - When reporting fidelity status, distinguish between:
   - expected reflow differences caused by user/browser zoom preferences, and
   - genuine layout bugs such as horizontal overflow, incorrect width calculations, broken wrapping, or fragile breakpoint behavior.
@@ -236,6 +243,8 @@ For each asset, choose exactly one path.
 ### 2) Asset is missing and the user did not ask to generate it
 
 - Use a clearly labeled placeholder with the correct approximate dimensions, aspect ratio, border radius, placement, and visual weight.
+- If you create or synthesize a temporary stand-in asset yourself instead of a generic placeholder, still treat that asset as missing for reporting purposes unless the user explicitly asked you to generate it.
+- Never silently substitute a stand-in, proxy illustration, or synthetic replacement and then omit it from the final missing-assets report.
 - Also prepare one separate, ready-to-use generation prompt for each missing asset.
 - Do not collapse multiple assets into one combined prompt.
 - Each prompt must remain standalone, but in the final response all still-missing asset prompts must be grouped together inside one single fenced `text` code block for easy copy/paste into another AI/LLM.
@@ -282,16 +291,30 @@ For each asset, choose exactly one path.
    - overlapping elements
    - controls that look too narrow for their content
    - suspiciously tight spacing that may break at slightly different widths
+10. For repeated UI structures such as card grids, table rows, stat tiles, nav items, or repeated buttons, do one explicit alignment pass and verify that shared baselines, footer rows, button positions, chip rows, and media crops are consistent across siblings.
 
 ## Mandatory visual verification workflow
 
 When browser and screenshot tools are available, the following passes are mandatory.
+
+If the page is too tall to inspect reliably in a single screenshot, capture segmented screenshots that collectively cover the whole page. Prefer top / middle / bottom coverage or more segments as needed. Do not assume unseen lower sections are correct.
+
+For tall pages, the preferred verification pattern is:
+- capture one full-page or tallest-practical screenshot artifact when tooling supports it, to understand overall vertical rhythm, section spacing, and macro composition across the whole document
+- also capture segmented viewport screenshots that cover the page from top to bottom with intentional scroll positions
+- visually inspect the segmented screenshots yourself; do not rely on the full-page artifact alone for lower sections, because tall captures can hide crowding, clipped text, sticky overlaps, or small alignment errors
+- make sure the segmented set covers the entire page without leaving unverified gaps between scroll positions
+- when a section is especially dense or fragile, add extra local screenshots for that region rather than assuming the nearest segment is sufficient
+
+Treat the full-page screenshot as a macro-composition aid and the segmented screenshots as the authoritative visual inspection set for tall-page fidelity.
 
 ### Pass 0 - viewport calibration
 - Use the exact primary reference dimensions for the first comparison pass.
 - Make sure the page is captured at the correct route/state and comparable scroll position.
 - Do not judge fidelity from a different width and then claim a match.
 - Keep viewport calibration honest: do not use CSS `zoom`, wrapper scaling, or screenshot-only transforms to force the composition into place.
+- Prefer automation screenshots captured at explicit CSS viewport dimensions over visual judgment from a headed browser window.
+- If headed mode is used for convenience, use it for interaction/debugging only; do not treat the live window as the authoritative fidelity check when a direct Playwright screenshot is available.
 
 ### Pass 1 - macro composition
 Check:
@@ -353,6 +376,9 @@ Check:
 - icon size inside controls
 - no overlapping layers, clipped corners, or compressed control interiors
 - no fields/buttons/selects that are narrower than the reference unless the screenshot clearly shows it
+- alignment consistency across repeated components
+- matched footer/button baselines across peer cards where the reference implies alignment
+- no sibling card or tile whose CTA, stat row, badge row, or title block sits visibly higher or lower than its peers without an explicit reason in the reference
 
 ### Pass 6 - responsive behavior
 After the reference-size version is close:
@@ -362,6 +388,7 @@ After the reference-size version is close:
 - preserve hierarchy and balance
 - avoid overflow, clipped controls, awkward wrapping, and distorted media
 - do not let the responsive version drift so far that it no longer resembles the same design language
+- when reporting results, distinguish environment-related rendering differences from genuine layout bugs; do not use DPI scaling or browser zoom as a blanket excuse for visible geometry mistakes
 
 ### Pass 7 - final completeness review
 Before finishing, verify:
@@ -412,6 +439,7 @@ At the end, briefly report:
 6. if any assets are still missing, include exactly one fenced `text` code block containing all remaining asset-generation prompts
 7. which visual comparison passes were completed
 8. any remaining uncertainties or tiny mismatches
+9. if any temporary stand-ins or synthetic replacements were used for missing assets, state that explicitly and list them alongside the missing-assets reporting
 
 ### Single asset-prompt block rules
 

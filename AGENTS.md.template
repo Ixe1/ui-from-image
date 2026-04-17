@@ -1,0 +1,59 @@
+# AGENTS.md
+
+## Repository expectations
+
+Fill in the placeholders below so Codex has repo-specific guidance in addition to the reusable `ui-from-image` skill.
+
+- package manager: `<npm | pnpm | yarn | bun | other>`
+- install command: `<...>`
+- dev server command: `<...>`
+- build command: `<...>`
+- lint command: `<...>`
+- test command: `<...>`
+- preview URL / route for this page: `<...>`
+
+## Frontend conventions
+
+- primary app/framework: `<React / Next.js / Vue / static HTML / other>`
+- existing styling system: `<Tailwind / DaisyUI / CSS modules / styled-components / etc.>`
+- shared layout components live in: `<...>`
+- shared UI components live in: `<...>`
+- icon system to reuse: `<heroicons / lucide / inline SVG / repo-specific icons / etc.>`
+- font sources to reuse: `<global CSS / local font files / next/font / etc.>`
+- theme tokens / colours live in: `<...>`
+- asset directories: `<...>`
+
+## UI-from-image fidelity rules
+
+- Treat the latest supplied screenshot as the source of truth.
+- First match the page at the exact reference viewport size before doing responsive adjustments.
+- Do not mark the task done if small icons, bullets, carets, stars, button logos, or other micro-details are missing.
+- Do not rely on framework defaults for typography when the screenshot differs.
+- Do not redesign crowded areas until the exact viewport size, container widths, gaps, and typography have been checked.
+
+## Exact verification setup
+
+- primary desktop viewport: `<e.g. 1400x1050>`
+- tablet viewport: `<e.g. 1024x1366>`
+- mobile viewport: `<e.g. 390x844>`
+- screenshot capture command or workflow: `<...>`
+- reference screenshot path(s): `<...>`
+- implementation screenshot output path(s): `<...>`
+
+## Optional screenshot diff helper
+
+If you keep this skill in the repo, point Codex to the helper script here.
+
+Example:
+`python <path-to-ui-from-image-skill>/scripts/compare_screenshots.py <reference.png> <implementation.png> --out-dir .codex-artifacts/ui-diff`
+
+## Done criteria for this repo
+
+Do not consider the task done until all of the following are true:
+
+- the exact-size desktop screenshot has been captured
+- the screenshot diff (or equivalent side-by-side check) has been reviewed
+- typography has been checked at the reference width
+- iconography completeness has been checked
+- supplied assets have been used or accurately replaced with placeholders/generated assets
+- the page builds/runs with the standard repo commands

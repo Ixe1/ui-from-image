@@ -29,6 +29,7 @@ If adapting an existing frontend/framework, follow the repo's file structure whi
 - If the repo already has a different established styling system, do not introduce Tailwind/DaisyUI as a competing second system unless the user explicitly asks for it.
 - If Tailwind/DaisyUI are already available or explicitly requested, treat them as implementation tools rather than design authority. Override defaults whenever the screenshot differs.
 - First achieve fidelity at the exact reference dimensions of the primary screenshot.
+- For desktop webpage work, do not treat a narrow mockup or POC screenshot as the final real-page desktop width. After the reference-size pass, prefer adapting the layout to a real desktop viewport around `1900px` wide, allowing roughly `1900px` rather than `1920px` to account for a scrollbar and normal browser chrome.
 - Only after the reference-size version is visually close should you derive tablet/mobile behavior.
 - When the user supplies a newer or revised screenshot, the latest screenshot becomes the source of truth.
 
@@ -67,6 +68,7 @@ When working inside an existing frontend or design system:
 
 - Record the exact dimensions of each reference image before coding.
 - For the primary fidelity pass, render the page at the exact reference viewport size in CSS pixels whenever possible.
+- If the reference desktop image is substantially narrower than a modern desktop viewport, treat that width as a composition/style reference rather than the final real-page desktop width. Preserve the screenshot's structure, hierarchy, spacing intent, and visual language, then expand and validate the actual desktop implementation at about `1900px` viewport width.
 - If multiple reference images are provided for desktop/tablet/mobile, treat each as authoritative for its breakpoint.
 - If only a desktop reference exists, infer tablet/mobile layouts by preserving hierarchy, ordering, and visual balance without inventing new sections or interactions.
 - If text is legible, reproduce it exactly, including punctuation and small helper labels.
@@ -382,6 +384,8 @@ Check:
 
 ### Pass 6 - responsive behavior
 After the reference-size version is close:
+- for desktop webpages, include a preferred wide-desktop validation pass at about `1900px` viewport width unless the user explicitly asks for a different desktop target
+- do not assume the reference screenshot's narrower width is the correct production desktop width; if the screenshot is a POC, translate it into a stable real-page layout at the preferred wide-desktop viewport while keeping its composition and design language
 - test tablet and mobile widths
 - if feasible, sanity-check at one alternate desktop condition as well, such as a slightly narrower desktop width or a browser zoomed-out view, to catch fragile layout assumptions
 - if a user’s environment is known to use non-default zoom or DPI scaling, include one sanity check that approximates that condition when practical

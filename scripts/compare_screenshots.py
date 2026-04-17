@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
 from pathlib import Path
 import sys
 
@@ -49,6 +48,12 @@ def parse_args() -> argparse.Namespace:
         default=4.0,
         help="Contrast boost for the enhanced diff image. Default: 4.0",
     )
+    parser.add_argument(
+        "--pixel-threshold",
+        type=int,
+        default=12,
+        help="Minimum grayscale difference before a pixel counts as changed. Default: 12",
+    )
     return parser.parse_args()
 
 
@@ -76,7 +81,7 @@ def resize_if_needed(reference: Image.Image, candidate: Image.Image, fit: bool) 
     return resized, True
 
 
-def compute_metrics(diff_rgb: Image.Image) -> dict:
+def compute_metrics(diff_rgb: Image.Image, pixel_threshold: int) -> dict:
     stat = ImageStat.Stat(diff_rgb)
     mean_per_channel = stat.mean
     rms_per_channel = stat.rms
@@ -87,12 +92,12 @@ def compute_metrics(diff_rgb: Image.Image) -> dict:
     normalized_mean_abs_pct = (mean_abs / 255.0) * 100.0
     normalized_rms_pct = (rms_avg / 255.0) * 100.0
 
-    # Approximate count of pixels with any visible difference.
+    # Ignore tiny anti-aliasing/subpixel differences that otherwise dominate browser screenshot comparisons.
     grayscale = diff_rgb.convert("L")
     hist = grayscale.histogram()
     total_pixels = diff_rgb.width * diff_rgb.height
-    identical_pixels = hist[0]
-    changed_pixels = total_pixels - identical_pixels
+    pixel_threshold = max(0, min(255, pixel_threshold))
+    changed_pixels = sum(hist[pixel_threshold + 1 :])
     changed_pct = (changed_pixels / total_pixels) * 100.0
 
     return {
@@ -102,6 +107,7 @@ def compute_metrics(diff_rgb: Image.Image) -> dict:
         "rms_diff": round(rms_avg, 4),
         "normalized_mean_abs_diff_pct": round(normalized_mean_abs_pct, 4),
         "normalized_rms_diff_pct": round(normalized_rms_pct, 4),
+        "pixel_threshold": pixel_threshold,
         "changed_pixels": changed_pixels,
         "total_pixels": total_pixels,
         "changed_pixel_pct": round(changed_pct, 4),
@@ -131,6 +137,7 @@ def write_text_summary(path: Path, report: dict) -> None:
         f"normalized_mean_abs_diff_pct: {report['metrics']['normalized_mean_abs_diff_pct']}%",
         f"rms_diff: {report['metrics']['rms_diff']}",
         f"normalized_rms_diff_pct: {report['metrics']['normalized_rms_diff_pct']}%",
+        f"pixel_threshold: {report['metrics']['pixel_threshold']}",
         f"changed_pixel_pct: {report['metrics']['changed_pixel_pct']}%",
         "",
         "Artifacts:",
@@ -140,6 +147,7 @@ def write_text_summary(path: Path, report: dict) -> None:
         "",
         "Interpretation:",
         "- Lower diff values are generally better, but visual judgment still matters more than the metric.",
+        "- The changed-pixel percentage ignores very small differences below the configured threshold.",
         "- Review the enhanced diff image to find concentrated mismatch regions.",
         "- A low global diff can still hide an important missing icon or typography mismatch.",
     ]
@@ -161,7 +169,7 @@ def main() -> int:
     enhanced = boost_diff(diff_rgb, args.enhance_factor)
     overlay = Image.blend(reference.convert("RGB"), candidate.convert("RGB"), 0.5)
 
-    metrics = compute_metrics(diff_rgb)
+    metrics = compute_metrics(diff_rgb, args.pixel_threshold)
 
     report = {
         "reference_path": str(args.reference),

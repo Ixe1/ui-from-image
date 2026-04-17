@@ -22,10 +22,10 @@ If adapting an existing frontend/framework, follow the repo's file structure whi
 
 ## Operating mode
 
-- Use DaisyUI + Tailwind CSS by default for standalone work.
+- For standalone work, default to plain HTML/CSS/JS unless the environment already includes a styling system the user wants to keep.
 - Reuse the repo's existing Tailwind/DaisyUI setup when present.
-- If the repo already has a different established styling system, do not introduce DaisyUI/Tailwind as a competing second system unless the user explicitly asks for that.
-- DaisyUI/Tailwind are implementation tools, not the design authority. Override defaults whenever the screenshot differs.
+- If the repo already has a different established styling system, do not introduce Tailwind/DaisyUI as a competing second system unless the user explicitly asks for it.
+- If Tailwind/DaisyUI are already available or explicitly requested, treat them as implementation tools rather than design authority. Override defaults whenever the screenshot differs.
 - First achieve fidelity at the exact reference dimensions of the primary screenshot.
 - Only after the reference-size version is visually close should you derive tablet/mobile behavior.
 - When the user supplies a newer or revised screenshot, the latest screenshot becomes the source of truth.
@@ -379,9 +379,10 @@ Continue iterating beyond these passes if needed. Do not stop at the first worki
 If this skill includes `scripts/compare_screenshots.py` and Python is available, use it after capturing the implementation screenshot at the reference size.
 
 Preferred usage:
-`python scripts/compare_screenshots.py path/to/reference.png path/to/implementation.png --out-dir .codex-artifacts/ui-diff`
+`python <path-to-codex-home>/skills/ui-from-image/scripts/compare_screenshots.py path/to/reference.png path/to/implementation.png --out-dir .codex-artifacts/ui-diff`
 
 Notes:
+- The helper script lives in the installed skill directory, not the target repo, unless you copied it into the repo yourself.
 - Best practice is to compare screenshots at the same dimensions without resizing.
 - Use `--fit` only as a fallback when your candidate screenshot size is slightly off and you need a quick diagnostic.
 - Use the generated diff images and metrics to locate hot spots, but do not optimize only to the number; visual judgment still matters.

@@ -1,0 +1,93 @@
+# UI From Image
+
+`ui-from-image` is a Codex skill for turning one or more UI screenshots into a high-fidelity frontend implementation.
+
+The screenshot is treated as the source of truth. The skill is designed for cases where "roughly similar" is not enough and the goal is to reproduce layout, typography, spacing, iconography, colour, and responsive behavior as closely as possible.
+
+## What This Skill Does
+
+- recreates a webpage or app UI from screenshot references
+- works for standalone pages or adaptation inside an existing frontend codebase
+- prioritizes exact reference-viewport matching before responsive refinements
+- requires explicit verification passes for typography, spacing, iconography, and layout fragility
+- handles missing assets with either supplied files, generated assets when explicitly requested, or placeholders plus standalone asset-generation prompts
+
+## Repository Contents
+
+- [SKILL.md](./SKILL.md): the main skill instructions and definition of done
+- [AGENTS.md.template](./AGENTS.md.template): repo-specific setup template for projects that use this skill
+- [agents/openai.yaml](./agents/openai.yaml): agent registration metadata
+- [references/visual-qa.md](./references/visual-qa.md): screenshot-based QA checklist
+- [references/asset-prompts.md](./references/asset-prompts.md): rules for placeholder handling and asset-generation prompts
+- [scripts/compare_screenshots.py](./scripts/compare_screenshots.py): helper script for producing screenshot diff artifacts
+
+## Core Workflow
+
+1. Inspect the reference image and inventory all meaningful visual elements before coding.
+2. Reuse existing components, tokens, fonts, and layout patterns when adapting an existing project.
+3. Build the first pass to match the primary reference viewport as closely as possible.
+4. Capture an implementation screenshot at the same dimensions as the reference.
+5. Compare the screenshots, write down mismatches, and iterate.
+6. Verify responsive behavior only after the reference-size implementation is visually close.
+7. Do not stop until remaining differences are minor and explainable.
+
+## Verification Standard
+
+The skill expects explicit checks for:
+
+- macro layout and composition
+- typography and exact copy
+- icon and control completeness
+- colours, borders, shadows, and surface treatment
+- spacing, radii, control sizing, and image framing
+- responsive behavior across desktop, tablet, and mobile
+
+The intent is to catch both major layout errors and small fidelity misses such as missing carets, clipped helper text, incorrect line breaks, or overly narrow controls.
+
+## Asset Handling
+
+For each visible asset in the reference, the skill expects one of three paths:
+
+- use the supplied asset and fit it accurately into the layout
+- use a clearly labeled placeholder and provide a standalone generation prompt if the asset is missing
+- generate or edit the asset when the user explicitly requests that and the environment supports it
+
+Small UI icons are treated as part of fidelity, not optional decoration.
+
+## Standalone vs Existing Projects
+
+For standalone work, the skill defaults to plain `index.html`, `styles.css`, and `script.js` unless the environment already includes a styling system the user wants to keep.
+
+For existing applications, the skill is intended to adapt the current stack instead of introducing a parallel one. If Tailwind or DaisyUI already exist, they can be reused, but they are implementation tools rather than design authority.
+
+## Screenshot Diff Helper
+
+The helper script can be used after capturing a reference screenshot and an implementation screenshot at the same dimensions:
+
+```bash
+python <path-to-codex-home>/skills/ui-from-image/scripts/compare_screenshots.py reference.png candidate.png --out-dir .codex-artifacts/ui-diff
+```
+
+Notes:
+
+- compare same-size screenshots whenever possible
+- use `--fit` only as a fallback diagnostic when dimensions are slightly off
+- use the generated images and metrics to find mismatch hot spots, but rely on visual judgment for final decisions
+- `changed_pixel_pct` uses a thresholded comparison so tiny anti-aliasing differences do not dominate the result
+
+Run `python <path-to-codex-home>/skills/ui-from-image/scripts/compare_screenshots.py --help` to see all options, including `--pixel-threshold`.
+
+## Using This Skill In Another Repo
+
+If you want a target project to provide better repo-specific guidance, copy or adapt [AGENTS.md.template](./AGENTS.md.template) into that repo and fill in:
+
+- package manager and standard commands
+- framework and styling system
+- component, icon, font, and asset locations
+- reference viewport sizes
+- screenshot capture workflow
+- done criteria specific to that project
+
+## Intended Outcome
+
+This skill is for high-precision UI recreation work. It is deliberately opinionated about verification because most failures in screenshot recreation are not functional bugs; they are small visual inaccuracies that accumulate into an obviously wrong result.

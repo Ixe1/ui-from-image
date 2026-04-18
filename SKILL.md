@@ -295,9 +295,19 @@ For each asset, choose exactly one path.
    - suspiciously tight spacing that may break at slightly different widths
 10. For repeated UI structures such as card grids, table rows, stat tiles, nav items, or repeated buttons, do one explicit alignment pass and verify that shared baselines, footer rows, button positions, chip rows, and media crops are consistent across siblings.
 
+Do not stop at code edits plus lint/build checks when browser verification is available. Build/test results never replace the required screenshot comparison loop for this skill.
+
 ## Mandatory visual verification workflow
 
 When browser and screenshot tools are available, the following passes are mandatory.
+
+If browser tools are available and you have not yet captured and inspected screenshots yourself, you are not done. Do not present the work as finished, ready, or validated. Instead, continue until the screenshot pass is complete or explicitly report the blocking reason you could not perform it.
+
+When a task only changes one dense or visually important region rather than a full page, still capture at least:
+- one screenshot showing the changed region in context
+- one close screenshot of the changed region itself when tooling supports element or cropped captures
+
+In your final report, never imply that screenshots were checked unless you actually captured and inspected them during the current turn.
 
 If the page is too tall to inspect reliably in a single screenshot, capture segmented screenshots that collectively cover the whole page. Prefer top / middle / bottom coverage or more segments as needed. Do not assume unseen lower sections are correct.
 
@@ -450,6 +460,8 @@ At the end, briefly report:
 - Use exactly one fenced `text` code block for all still-missing asset prompts.
 - Omit the block entirely if no asset-generation prompts are needed.
 - Do not spread asset prompts across multiple code blocks or normal prose.
+- Do not substitute freeform prose prompts, bullet lists, or paraphrased prompt suggestions when this block is required.
+- When missing assets remain, copy this structure exactly rather than improvising a different format.
 - Inside the block, keep each asset prompt standalone and clearly separated with `---`.
 - Start the block with:
 
@@ -466,6 +478,11 @@ background_requirements: ...
 prompt: ...
 avoid: ...
 ---
+
+Before sending the final answer, quickly self-check:
+- if any asset is still missing, is there exactly one fenced `text` block
+- does every missing asset have its own `asset_name`, `suggested_filename`, `purpose_in_ui`, `target_dimensions_or_aspect_ratio`, `background_requirements`, `prompt`, and `avoid`
+- did you avoid adding any extra asset prompts outside that single block
 
 ## Definition of done
 
@@ -484,4 +501,6 @@ The task is done only when all of the following are true:
 - Remaining missing assets are represented by accurate placeholders plus standalone generation prompts grouped into one single fenced `text` code block.
 - No obvious horizontal overflow, overlapping elements, or crowding-related regressions remain in the verified views.
 - Separate HTML/CSS/JS files are used for standalone work, or the implementation is cleanly integrated into the repo's existing structure for framework-based projects.
+- If browser tooling was available, the final response accurately states which screenshots were captured and inspected; you must not omit this pass or describe non-visual checks as equivalent.
+- If missing assets remain, the final response uses the exact single-block asset prompt format from this skill rather than an ad hoc alternative.
 

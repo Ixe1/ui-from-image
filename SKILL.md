@@ -38,6 +38,7 @@ If adapting an existing frontend/framework, follow the repo's file structure whi
 - Match layout, spacing, typography, line height, letter spacing, colours, borders, border opacity, shadows, gradients, border radius, imagery crop/aspect ratio, and visual hierarchy as closely as possible.
 - Use explicit values for widths, heights, max-widths, padding, margin, gap, border radius, font size, line height, tracking, and shadow when defaults are not close enough.
 - Treat text fidelity as a layout problem as well as a content problem. If text is clipped, crowded, truncated, wrapped incorrectly, or pushes nearby controls out of alignment, the page is not done.
+- Treat data visualizations and proportional graphics as layout-critical UI, not decorative approximations. Chart plot areas, axes, legends, segment widths, map regions, funnels, gauges, timelines, and diagram shapes must match the reference proportions and alignment closely enough that a user would read them as the same interface.
 - Treat every visible detail as required, including micro-details:
   - small logos and button icons
   - search icons
@@ -113,6 +114,9 @@ Before implementing, explicitly inspect and inventory:
 10. Likely responsive intent
 11. Any regions where copy length, chip count, or control density make crowding likely
 12. Any rows or panels that must remain on one line at the reference breakpoint
+13. Every data visualization, including its card bounds, plot-area bounds, axes, labels, gridlines, legends, controls, marker positions, series shapes, and empty padding
+14. Every proportional graphic or diagram, including relative segment sizes, taper direction, alignment, labels, fills, strokes, and surrounding whitespace
+15. Every navigation or toolbar icon matched item-by-item against the reference, including active states, badge placement, stroke weight, and whether the glyph itself is the same concept
 
 Do not start coding until you have a working mental map of every visually meaningful element.
 
@@ -167,6 +171,7 @@ Before declaring the page done, verify that every visually meaningful icon or ma
 
 This includes:
 - logo marks
+- sidebar, tab bar, toolbar, and command palette icons
 - brand icons inside buttons
 - search icons
 - dropdown carets
@@ -180,9 +185,39 @@ This includes:
 
 Rules:
 - Small UI icons count as assets and must not be omitted.
+- Navigation icons must be audited item-by-item. A generic placeholder icon is acceptable only when the reference glyph is genuinely unreadable; otherwise match the same visual metaphor, stroke weight, size, and alignment.
 - Prefer existing repo icons or simple inline SVGs for small UI icons.
+- Do not rely on CSS pseudo-elements, borders, or clip-path tricks for icons when the glyph has a recognizable outline, holes, star points, curved arcs, brand-like geometry, or a specific visual metaphor. Use an inline SVG or existing icon component so the icon remains visible and comparable to the reference.
 - Do not add a new icon library unless the repo already uses one or the user explicitly asks for it.
 - For common brand marks used in UI controls (for example Discord), use a clean inline SVG or existing icon component unless the repo already has an appropriate asset.
+
+## Data Visualization and Diagram Fidelity
+
+Charts, diagrams, and dense analytic graphics need their own explicit pass. Do not collapse them into a generic "looks like a chart" implementation.
+
+For every chart-like region, record and match:
+- card size and chart-region size separately
+- plot-area width, height, and inset from the card edges
+- legend position, legend swatch style, and spacing from the title or plot
+- axis label count, axis side, tick label positions, and gridline count
+- series colour, stroke width, dash pattern, curvature, marker size, and rough point trajectory
+- control placement around the chart, such as segmented buttons, dropdowns, zoom controls, range pills, or toolbars
+- summary/footer rows below the plot, including column widths and separator lines
+
+For every proportional graphic, record and match:
+- overall bounding box and alignment within its card
+- number of segments, their relative heights and widths, and whether they taper, expand, overlap, or step
+- label placement inside or outside each segment
+- colour order, opacity, borders, shadows, and gaps between segments
+- companion labels, callout boxes, legends, or side metrics and their distance from the graphic
+- whether text is fully contained in the intended segment or intentionally outside it, with no label spillover, clipping, or crowding
+
+Implementation guidance:
+- Use inline SVG for non-rectangular proportional graphics such as funnels, pyramids, gauges, radial charts, maps, node graphs, complex timelines, and icon-like diagrams unless the reference can be matched exactly with normal layout boxes.
+- Avoid approximating complex shapes with stacked divs, pseudo-elements, border triangles, or CSS `clip-path` when segment width, taper angle, separator gaps, or label placement need to be faithful. Those techniques are acceptable only after a screenshot pass proves the geometry and text containment match.
+- When an SVG viewBox is used, set explicit width, height, polygon/path coordinates, text anchors, and label positions rather than relying on auto scaling or centered layout alone.
+
+When a chart or diagram looks too narrow, too tall, too centered, too simplified, or visually detached from its surrounding card, treat that as a geometry mismatch. Fix container tracks, plot insets, SVG viewBox/aspect ratio, control widths, and neighbouring column ratios before moving on to responsive work.
 
 ## Layout fitting and crowding rules
 
@@ -295,6 +330,7 @@ Use this path for proprietary brand marks, assets that require exact real-world 
 ## Asset-specific guidance
 
 - Simple UI icons are not a reason to leave a blank area. Implement them with inline SVG or existing repo icons when possible.
+- For repeated icons or shortcut/navigation marks, inspect each rendered icon in screenshot context; a technically present icon that is too faint, clipped, collapsed, or visually unrecognizable still counts as missing.
 - For brand logos or proprietary-looking marks that are not provided, use placeholders unless the user explicitly wants a temporary generated stand-in.
 - For hero images, thumbnail images, maps, and other prominent visuals, match crop, focal point, aspect ratio, and visual weight as closely as possible.
 - If the reference includes repeated thumbnail cards, pay attention to consistent crop and corner radius across all items.
@@ -309,13 +345,14 @@ Use this path for proprietary brand marks, assets that require exact real-world 
 6. Compare the implementation screenshot against the reference.
 7. Make a written mismatch list before editing. Focus on the largest visual errors first, then the micro-details.
 8. Repeat screenshot, mismatch list, and fixes until there are no obvious mismatches left.
-9. Before finishing, do at least one explicit "fragility pass" focused only on:
+9. For any chart, map, gauge, timeline, funnel, pyramid, tree, graph, or other analytic visual, do a dedicated visual-primitive pass comparing its bounding box, internal proportions, labels, and controls against the reference before declaring the main layout close.
+10. Before finishing, do at least one explicit "fragility pass" focused only on:
    - crowded rows
    - clipped or squashed text
    - overlapping elements
    - controls that look too narrow for their content
    - suspiciously tight spacing that may break at slightly different widths
-10. For repeated UI structures such as card grids, table rows, stat tiles, nav items, or repeated buttons, do one explicit alignment pass and verify that shared baselines, footer rows, button positions, chip rows, and media crops are consistent across siblings.
+11. For repeated UI structures such as card grids, table rows, stat tiles, nav items, or repeated buttons, do one explicit alignment pass and verify that shared baselines, footer rows, button positions, chip rows, and media crops are consistent across siblings.
 
 Do not stop at code edits plus lint/build checks when browser verification is available. Build/test results never replace the required screenshot comparison loop for this skill.
 
@@ -356,6 +393,7 @@ Check:
 - main vs sidebar width ratio
 - hero split ratios
 - card widths and heights
+- chart, diagram, map, media, and table region width ratios inside their cards
 - section spacing
 - alignment of top nav, hero, filter area, table, and sidebar
 - absence of horizontal overflow or suspicious whole-page shrink/stretch behavior
@@ -377,6 +415,7 @@ Check:
 ### Pass 3 - iconography and control completeness
 Check:
 - every icon, logo, caret, bullet, dot, and star
+- every navigation, sidebar, toolbar, and tab icon matched to the corresponding reference item
 - button leading/trailing icons
 - search icon presence and placement
 - inline helper icons
@@ -407,6 +446,9 @@ Check:
 - button heights
 - row heights
 - image crop framing
+- chart plot-area bounds, axis/gridline placement, series shape, marker placement, legend spacing, and chart-footer geometry
+- proportional diagram bounds, segment sizes, taper/step geometry, label placement, and adjacent metric spacing
+- proportional diagram text containment: labels must not spill outside their intended segment unless the reference does the same
 - icon size inside controls
 - no overlapping layers, clipped corners, or compressed control interiors
 - no fields/buttons/selects that are narrower than the reference unless the screenshot clearly shows it
@@ -518,6 +560,7 @@ The task is done only when all of the following are true:
 - Typography has been explicitly audited and does not merely rely on framework defaults.
 - Text is correct and does not appear clipped, truncated, squashed, or incorrectly wrapped in the verified views.
 - Iconography and micro-details have been explicitly audited and no obvious small UI elements are missing.
+- Data visualizations and proportional diagrams have been explicitly audited for card bounds, internal geometry, labels, controls, and surrounding whitespace.
 - Supplied assets are used appropriately.
 - Explicitly requested generated assets are integrated when possible.
 - Remaining missing assets are represented by accurate placeholders plus standalone generation prompts grouped into one single fenced `text` code block.

@@ -1,6 +1,6 @@
 ---
 name: ui-from-image
-description: Convert one or more webpage/app UI screenshots into a high-fidelity responsive implementation, either as a standalone page or by adapting an existing frontend. Prioritize exact viewport matching, typography/icon audits, explicit spacing and colour matching, browser screenshot comparison, and repeated refinement until no obvious mismatches remain. Handle missing assets by using supplied files, generating them when explicitly requested and available, or otherwise using placeholders plus a single copy-paste code block containing one standalone generation prompt per remaining asset.
+description: Convert one or more webpage/app UI screenshots into a high-fidelity responsive implementation, either as a standalone page or by adapting an existing frontend. Prioritize exact viewport matching, typography/icon audits, explicit spacing and colour matching, browser screenshot comparison, and repeated refinement until no obvious mismatches remain. Handle missing assets by using supplied files, generating missing raster assets with direct image_gen when available, or otherwise using placeholders plus a single copy-paste code block containing one standalone generation prompt per remaining asset.
 ---
 
 ## Mission
@@ -220,6 +220,25 @@ For the reference breakpoint:
 
 ## Asset handling workflow
 
+### Direct `image_gen` rule
+
+When raster assets are missing and would materially improve the implementation, use the native `image_gen` tool directly by default. Do not require the separate `imagegen` or `imagen` skill to be installed.
+
+After `image_gen` runs, continue the same turn unless the user explicitly requested image-only output. Briefly identify what was generated, provide the saved file path or asset reference when available, assess whether it matches the request, and continue with saving, integration, and verification.
+
+If `image_gen` is unavailable or fails, fall back to placeholders plus one standalone generation prompt per missing asset.
+
+Operational rules for direct `image_gen`:
+- Treat generated outputs as project-bound assets when they are used by the implementation. The built-in tool may save under `$CODEX_HOME/generated_images/`; move or copy the selected final into the workspace before referencing it in code.
+- Do not rely on a destination-path argument for the built-in tool. Generate first, then move or copy the selected output.
+- Do not overwrite existing assets unless the user explicitly asked for replacement. Otherwise create a sibling filename such as `hero-v2.png` or `card-thumbnail-generated.png`.
+- For multiple missing assets, make one `image_gen` call per asset or variant.
+- For edits of a local file, inspect it with `view_image` first so it is visible in the conversation context. Label each input image by role, such as edit target, style reference, composition reference, or supporting insert.
+- Shape prompts compactly around asset type, purpose in UI, subject/content, composition/framing, style/medium, lighting/mood, colour palette, exact text if any, constraints, and avoid notes. For edits, repeat invariants such as "change only X; keep Y unchanged."
+- Do not treat fallback CLI/API controls such as quality, input fidelity, masks, output format, or output path as built-in `image_gen` tool arguments.
+
+When transparency is requested, verify the saved PNG has a real alpha channel before finishing. Inspect metadata or pixels with a tool such as Pillow or .NET `System.Drawing`; a valid transparent PNG should be alpha-capable, such as `RGBA` or `Format32bppArgb`, and representative background pixels such as the corners should have alpha `0`. If the generated file has a rendered checkerboard or solid background, leave it untouched, create a repaired derivative with a clear name such as `*-transparent.png`, and re-verify the repaired output.
+
 First, inventory every visible asset required by the page:
 - logos
 - hero images
@@ -242,12 +261,23 @@ For each asset, choose exactly one path.
 - Use `object-fit: cover` or `contain` as appropriate.
 - If the asset is low-resolution or otherwise imperfect, get as close as possible and note the limitation.
 
-### 2) Asset is missing and the user did not ask to generate it
+### 2) Asset is missing and should be generated
+
+- Use `image_gen` directly to generate or edit the asset when the tool is available.
+- Save generated assets in the repo's existing asset location, or a sensible folder such as `assets/generated/` if no convention exists.
+- Update the consuming code or markup to reference the generated asset.
+- Validate that the asset fits the layout visually and dimensionally.
+- Re-crop, regenerate, or iterate if needed until the asset works in context.
+- If `image_gen` is unavailable or fails, use a clearly labeled placeholder and output one standalone generation prompt for the asset.
+
+### 3) Asset is missing but should not be generated
+
+Use this path for proprietary brand marks, assets that require exact real-world source material, or cases where the user explicitly asks not to generate images.
 
 - Use a clearly labeled placeholder with the correct approximate dimensions, aspect ratio, border radius, placement, and visual weight.
-- If you create or synthesize a temporary stand-in asset yourself instead of a generic placeholder, still treat that asset as missing for reporting purposes unless the user explicitly asked you to generate it.
+- If you create or synthesize a temporary stand-in asset yourself instead of a generic placeholder, still treat that asset as missing for reporting purposes.
 - Never silently substitute a stand-in, proxy illustration, or synthetic replacement and then omit it from the final missing-assets report.
-- Also prepare one separate, ready-to-use generation prompt for each missing asset.
+- Prepare one separate, ready-to-use generation prompt for each missing asset unless the user explicitly asked not to receive prompts.
 - Do not collapse multiple assets into one combined prompt.
 - Each prompt must remain standalone, but in the final response all still-missing asset prompts must be grouped together inside one single fenced `text` code block for easy copy/paste into another AI/LLM.
 - Separate asset prompts inside that block with a clear divider such as `---`.
@@ -261,14 +291,6 @@ For each asset, choose exactly one path.
   - target aspect ratio or dimensions
   - transparency/background requirements if relevant
   - key "avoid" notes
-
-### 3) Asset is missing and the user explicitly asked to generate or edit it
-
-- If image generation/editing is available in the active environment, generate or edit the asset and integrate it into the page.
-- Save generated assets in the repo's existing asset location, or a sensible folder such as `assets/generated/` if no convention exists.
-- Validate that the asset fits the layout visually and dimensionally.
-- Re-crop, regenerate, or iterate if needed until the asset works in context.
-- If image generation/editing is not available, fall back to placeholders plus one standalone generation prompt per missing asset, and output all such prompts together inside one single fenced `text` code block.
 
 ## Asset-specific guidance
 

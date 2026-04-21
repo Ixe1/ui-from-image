@@ -12,7 +12,7 @@ The skill is designed for cases where "roughly similar" is not enough and the go
 - works for standalone pages or adaptation inside an existing frontend codebase
 - prioritizes exact reference-viewport matching before responsive refinements
 - requires explicit verification passes for typography, spacing, iconography, and layout fragility
-- handles missing assets with either supplied files, generated assets when explicitly requested, or placeholders plus standalone asset-generation prompts
+- handles missing assets with supplied files, direct `image_gen` generation for missing raster assets when available, or placeholders plus standalone asset-generation prompts
 
 ## Repository Contents
 
@@ -73,8 +73,10 @@ The intent is to catch both major layout errors and small fidelity misses such a
 For each visible asset in the reference, the skill expects one of three paths:
 
 - use the supplied asset and fit it accurately into the layout
-- use a clearly labeled placeholder and provide a standalone generation prompt if the asset is missing
-- generate or edit the asset when the user explicitly requests that and the environment supports it
+- generate or edit missing raster assets with direct `image_gen` when the tool is available
+- use a clearly labeled placeholder and provide a standalone generation prompt when generation is unavailable, fails, or the asset should not be invented
+
+When `image_gen` is used, the skill instructs Codex to continue the same turn after generation, move or copy project-bound outputs from the default generated-images location into the workspace, integrate them into the implementation, and verify that they fit the layout. It does not require the separate `imagegen` or `imagen` skill to be installed. If `image_gen` is unavailable or fails, the fallback remains placeholders plus standalone asset-generation prompts.
 
 Small UI icons are treated as part of fidelity, not optional decoration.
 

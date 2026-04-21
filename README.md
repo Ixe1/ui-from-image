@@ -23,6 +23,25 @@ The skill is designed for cases where "roughly similar" is not enough and the go
 - [references/asset-prompts.md](./references/asset-prompts.md): rules for placeholder handling and asset-generation prompts
 - [scripts/compare_screenshots.py](./scripts/compare_screenshots.py): helper script for producing screenshot diff artifacts
 
+## Dependencies And Tooling
+
+The skill instructions themselves do not require the separate `playwright` Codex skill to be installed. `ui-from-image` can still be used to inspect references, implement UI, perform manual visual comparison, and report any verification limits.
+
+For high-fidelity browser verification, some way to capture deterministic screenshots is strongly recommended. Suitable options include:
+
+- the separate Codex `playwright` skill, when installed
+- Playwright CLI or another Playwright setup already available in the target project
+- another headless browser/screenshot workflow provided by the environment
+- manual screenshots as a fallback, with any limitations reported clearly
+
+The bundled screenshot diff helper is optional. It requires Python plus Pillow:
+
+```bash
+pip install pillow
+```
+
+If Pillow is unavailable, the skill still works; compare screenshots manually or use another available image-diff tool.
+
 ## Core Workflow
 
 1. Inspect the reference image and inventory all meaningful visual elements before coding.

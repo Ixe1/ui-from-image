@@ -98,6 +98,15 @@ When working inside an existing frontend or design system:
   - expected reflow differences caused by user/browser zoom preferences, and
   - genuine layout bugs such as horizontal overflow, incorrect width calculations, broken wrapping, or fragile breakpoint behavior.
 
+## Scroll-Resilience Check
+
+For layouts with sticky/fixed sidebars, tool panels, inspectors, menus, or any viewport-height region:
+- Verify that every region with content taller than the viewport can be scrolled independently.
+- Do not rely on `height: 100vh` alone for fixed/sticky panels; add appropriate `overflow-y: auto` where content may exceed available height.
+- Test at least one shorter desktop viewport height or zoom-like condition when the design includes a full-height sidebar or tool panel.
+- Confirm lower controls, footer actions, account cards, collapse buttons, and secondary navigation remain reachable.
+- Treat unreachable panel content as a functional layout bug, not only a visual mismatch.
+
 ## Preflight checklist
 
 Before implementing, explicitly inspect and inventory:
@@ -177,6 +186,7 @@ This includes:
 - dropdown carets
 - stat-card icons
 - status indicators
+- row, table, list, and card action icons
 - map / notification bullets
 - table favorite icons
 - pagination arrows
@@ -186,6 +196,7 @@ This includes:
 Rules:
 - Small UI icons count as assets and must not be omitted.
 - Navigation icons must be audited item-by-item. A generic placeholder icon is acceptable only when the reference glyph is genuinely unreadable; otherwise match the same visual metaphor, stroke weight, size, and alignment.
+- Repeated row-action icons must be audited as a set and individually. Confirm the intended semantics are preserved, such as comment vs edit vs open/external-link vs copy vs delete vs overflow; do not substitute a visually similar control with a different meaning.
 - Prefer existing repo icons or simple inline SVGs for small UI icons.
 - Do not rely on CSS pseudo-elements, borders, or clip-path tricks for icons when the glyph has a recognizable outline, holes, star points, curved arcs, brand-like geometry, or a specific visual metaphor. Use an inline SVG or existing icon component so the icon remains visible and comparable to the reference.
 - Do not add a new icon library unless the repo already uses one or the user explicitly asks for it.
@@ -211,6 +222,13 @@ For every proportional graphic, record and match:
 - colour order, opacity, borders, shadows, and gaps between segments
 - companion labels, callout boxes, legends, or side metrics and their distance from the graphic
 - whether text is fully contained in the intended segment or intentionally outside it, with no label spillover, clipping, or crowding
+
+For circular charts such as donuts, pies, gauges, and radial progress indicators:
+- Audit center labels separately from the chart shape.
+- Match the center label's font size, weight, line height, and vertical alignment against the reference.
+- Ensure the label fits comfortably inside the inner circle at the reference viewport and responsive breakpoints.
+- Prefer explicit flex/grid centering and line heights for center labels.
+- If the center label appears crowded, oversized, off-center, or clipped, fix typography and inner radius before declaring the chart matched.
 
 Implementation guidance:
 - Use inline SVG for non-rectangular proportional graphics such as funnels, pyramids, gauges, radial charts, maps, node graphs, complex timelines, and icon-like diagrams unless the reference can be matched exactly with normal layout boxes.
@@ -346,13 +364,16 @@ Use this path for proprietary brand marks, assets that require exact real-world 
 7. Make a written mismatch list before editing. Focus on the largest visual errors first, then the micro-details.
 8. Repeat screenshot, mismatch list, and fixes until there are no obvious mismatches left.
 9. For any chart, map, gauge, timeline, funnel, pyramid, tree, graph, or other analytic visual, do a dedicated visual-primitive pass comparing its bounding box, internal proportions, labels, and controls against the reference before declaring the main layout close.
-10. Before finishing, do at least one explicit "fragility pass" focused only on:
+10. For dense, high-value, or fragile components, capture focused component screenshots/crops and inspect them at larger scale before relying on full-page judgment.
+11. Before finishing, do at least one explicit "fragility pass" focused only on:
    - crowded rows
    - clipped or squashed text
    - overlapping elements
    - controls that look too narrow for their content
    - suspiciously tight spacing that may break at slightly different widths
-11. For repeated UI structures such as card grids, table rows, stat tiles, nav items, or repeated buttons, do one explicit alignment pass and verify that shared baselines, footer rows, button positions, chip rows, and media crops are consistent across siblings.
+   - fixed-height or sticky panels whose lower content may become unreachable at higher zoom, DPI scaling, or shorter viewport heights
+   - center text inside donuts, pies, gauges, badges, counters, and compact chart labels
+12. For repeated UI structures such as card grids, table rows, stat tiles, nav items, or repeated buttons, do one explicit alignment pass and verify that shared baselines, footer rows, button positions, chip rows, and media crops are consistent across siblings.
 
 Do not stop at code edits plus lint/build checks when browser verification is available. Build/test results never replace the required screenshot comparison loop for this skill.
 
@@ -416,6 +437,7 @@ Check:
 Check:
 - every icon, logo, caret, bullet, dot, and star
 - every navigation, sidebar, toolbar, and tab icon matched to the corresponding reference item
+- every repeated table/list/card action icon, including whether each glyph has the same semantic meaning as the reference
 - button leading/trailing icons
 - search icon presence and placement
 - inline helper icons
@@ -455,6 +477,23 @@ Check:
 - alignment consistency across repeated components
 - matched footer/button baselines across peer cards where the reference implies alignment
 - no sibling card or tile whose CTA, stat row, badge row, or title block sits visibly higher or lower than its peers without an explicit reason in the reference
+
+### Pass 5a - component crop checks
+For dense, high-value, or fragile UI regions, capture and inspect focused screenshots of individual components in addition to full-page or segmented screenshots.
+
+Use component-level screenshots for:
+- charts, donuts, gauges, maps, funnels, tables, data grids, timelines, and dashboards
+- sticky sidebars, toolbars, inspectors, headers, and filter bars
+- cards with compact typography, badges, counters, avatars, icons, or action rows
+- any region where text alignment, clipping, overflow, or exact proportional geometry is easy to miss at full-page scale
+- any component that looked questionable during the full-page pass
+
+When using Playwright or equivalent browser automation:
+- Prefer element screenshots/crops for the component under review.
+- Capture the component in context when its surrounding spacing matters.
+- Inspect center labels, legends, chip rows, button text, icon alignment, row heights, and internal padding at component scale.
+- Do not rely only on full-page screenshots for small typography or chart-label judgments.
+- If a component-level crop reveals an issue, fix it and re-capture that component before declaring the visual pass complete.
 
 ### Pass 6 - responsive behavior
 After the reference-size version is close:
@@ -561,6 +600,7 @@ The task is done only when all of the following are true:
 - Text is correct and does not appear clipped, truncated, squashed, or incorrectly wrapped in the verified views.
 - Iconography and micro-details have been explicitly audited and no obvious small UI elements are missing.
 - Data visualizations and proportional diagrams have been explicitly audited for card bounds, internal geometry, labels, controls, and surrounding whitespace.
+- Focused component screenshots/crops have been captured and inspected for dense, high-value, or fragile regions when tooling makes that practical.
 - Supplied assets are used appropriately.
 - Explicitly requested generated assets are integrated when possible.
 - Remaining missing assets are represented by accurate placeholders plus standalone generation prompts grouped into one single fenced `text` code block.

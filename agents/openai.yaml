@@ -1,6 +1,6 @@
 interface:
   display_name: "UI From Image"
   short_description: "Build responsive UIs from screenshots"
-  default_prompt: "Use $ui-from-image to recreate the provided UI screenshot references with high visual fidelity, match the reference viewport first, and iterate with screenshot comparison until obvious mismatches are gone."
+  default_prompt: "Use $ui-from-image to recreate the provided UI screenshot references with high visual fidelity, match the reference viewport first, then verify responsive, navigation, and key component states with screenshots until obvious mismatches are gone."
 policy:
   allow_implicit_invocation: true
